@@ -30,10 +30,10 @@ export class TodoService {
       : {};
 
     // Zliczamy rekordy
-    const total = await this.prisma.todo.count({ where });
+    const totalPromise = this.prisma.todo.count({ where });
 
     // Pobieramy dane
-    const todos = await this.prisma.todo.findMany({
+    const todosPromise = this.prisma.todo.findMany({
       where,
       skip,
       take: limit,
@@ -41,6 +41,8 @@ export class TodoService {
         [sortBy]: sortOrder,
       },
     });
+
+    const [total, todos] = await Promise.all([totalPromise, todosPromise]);
 
     return {
       data: todos,
