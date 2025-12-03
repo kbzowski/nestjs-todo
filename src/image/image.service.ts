@@ -1,12 +1,10 @@
 import {
   Injectable,
   Logger,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import sharp from 'sharp';
-import { fileTypeFromBuffer } from 'file-type';
 import latinize from 'latinize';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -18,32 +16,15 @@ export class ImageService {
   private readonly uploadDir = 'upload';
   private readonly maxWidth = 800;
   private readonly maxHeight = 600;
-  private readonly maxFileSize = 5 * 1024 * 1024; // 5 MB
-  private readonly allowedMimeTypes = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'image/gif',
-  ];
 
   constructor(private readonly prisma: PrismaService) {
     void this.ensureUploadDir();
   }
 
   /**
-   * Wgrywa plik obrazu, waliduje go, przetwarza i zapisuje metadane do bazy danych
+   * Wgrywa plik obrazu, przetwarza i zapisuje metadane do bazy danych
    */
   async uploadImage(file: Express.Multer.File): Promise<Image> {
-    // Walidacja rozmiaru pliku
-    if (file.size > this.maxFileSize) {
-      throw new BadRequestException(
-        `File size exceeds maximum allowed size of ${this.maxFileSize / 1024 / 1024}MB`,
-      );
-    }
-
-    // Walidacja MIME type za pomocą magic bytes
-    await this.validateMimeType(file.buffer);
-
     // Generowanie unikalnej nazwy pliku
     const filename = this.generateFilename(file.originalname);
     const filepath = path.join(this.uploadDir, filename);
@@ -164,23 +145,6 @@ export class ImageService {
       .replace(/^-|-$/g, '');
 
     return sanitized || 'image';
-  }
-
-  /**
-   * Waliduje MIME type za pomocą magic bytes (biblioteka file-type)
-   */
-  private async validateMimeType(buffer: Buffer): Promise<void> {
-    const fileType = await fileTypeFromBuffer(buffer);
-
-    if (!fileType) {
-      throw new BadRequestException('Unable to determine file type');
-    }
-
-    if (!this.allowedMimeTypes.includes(fileType.mime)) {
-      throw new BadRequestException(
-        `Invalid file type. Allowed types: ${this.allowedMimeTypes.join(', ')}`,
-      );
-    }
   }
 
   /**
