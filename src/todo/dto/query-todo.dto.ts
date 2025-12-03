@@ -38,7 +38,7 @@ export class QueryTodoDto {
   @IsOptional()
   sortOrder: SortOrder = 'asc';
 
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: string }) => {
     return [true, 'enabled', 'true', 1, '1'].includes(value);
   })
   @IsOptional()

@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+  IsOptional,
+  IsInt,
+} from 'class-validator';
 
 export class CreateTodoDto {
   @IsNotEmpty({ message: 'Title is required' })
@@ -6,4 +13,8 @@ export class CreateTodoDto {
   @MaxLength(255, { message: 'Title must not exceed 255 characters' })
   @IsString({ message: 'Title must be a string' })
   title: string;
+
+  @IsOptional()
+  @IsInt({ message: 'Image ID must be an integer' })
+  imageId?: number;
 }
