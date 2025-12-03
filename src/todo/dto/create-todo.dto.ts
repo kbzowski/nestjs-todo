@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsInt,
 } from 'class-validator';
+import { IsImageExists } from '../../common';
 
 export class CreateTodoDto {
   @IsNotEmpty({ message: 'Title is required' })
@@ -15,6 +16,7 @@ export class CreateTodoDto {
   title: string;
 
   @IsOptional()
+  @IsImageExists()
   @IsInt({ message: 'Image ID must be an integer' })
   imageId?: number;
 }

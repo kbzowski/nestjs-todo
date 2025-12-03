@@ -3,6 +3,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
 } from '@nestjs/common';
+import { types as MimeType } from 'mime-types';
 import { MagicBytesValidator } from '../validators';
 
 /**
@@ -17,10 +18,11 @@ export class ImageUploadPipe extends ParseFilePipe {
         new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5 MB
         new MagicBytesValidator({
           allowedMimeTypes: [
-            'image/jpeg',
-            'image/png',
-            'image/webp',
-            'image/gif',
+            MimeType.jpeg,
+            MimeType.png,
+            MimeType.webp,
+            MimeType.gif,
+            MimeType.bmp,
           ],
         }),
       ],

@@ -11,6 +11,7 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import mime from 'mime-types';
 import { ImageService } from './image.service';
 import { ImageUploadPipe } from './pipes';
 import { createReadStream } from 'fs';
@@ -42,7 +43,7 @@ export class ImageController {
     const fileStream = createReadStream(imagePath);
 
     return new StreamableFile(fileStream, {
-      type: 'image/png',
+      type: mime.types.png,
     });
   }
 

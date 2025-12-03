@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import sharp from 'sharp';
@@ -18,7 +19,10 @@ export class ImageService {
   private readonly maxHeight = 600;
 
   constructor(private readonly prisma: PrismaService) {
-    void this.ensureUploadDir();
+    this.ensureUploadDir().catch((error) => {
+      this.logger.error('Failed to create upload directory', error);
+      throw error;
+    });
   }
 
   /**
@@ -51,9 +55,7 @@ export class ImageService {
   /**
    * Usuwa obraz z bazy danych i dysku
    */
-  async deleteImage(imageId: number | null): Promise<void> {
-    if (!imageId) return;
-
+  async deleteImage(imageId: number): Promise<void> {
     const image = await this.prisma.image.findUnique({
       where: { id: imageId },
     });
@@ -106,21 +108,6 @@ export class ImageService {
   }
 
   /**
-   * Wyszukuje obraz po ID
-   */
-  async findById(imageId: number): Promise<Image> {
-    const image = await this.prisma.image.findUnique({
-      where: { id: imageId },
-    });
-
-    if (!image) {
-      throw new NotFoundException(`Image with ID ${imageId} not found`);
-    }
-
-    return image;
-  }
-
-  /**
    * Generuje unikalną nazwę pliku: timestamp-zsanityzowana-nazwa-oryginalna.png
    */
   private generateFilename(originalName: string): string {
@@ -153,6 +140,11 @@ export class ImageService {
   private async processImage(buffer: Buffer): Promise<Buffer> {
     const image = sharp(buffer);
     const metadata = await image.metadata();
+
+    // Walidacja metadanych obrazu
+    if (!metadata.width || !metadata.height) {
+      throw new BadRequestException('Unable to read image dimensions');
+    }
 
     // Zmniejszenie tylko jeśli obraz jest większy niż maksymalne wymiary
     if (metadata.width > this.maxWidth || metadata.height > this.maxHeight) {

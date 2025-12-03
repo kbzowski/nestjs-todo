@@ -4,9 +4,10 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { TodoModule } from './todo/todo.module';
 import { ImageModule } from './image/image.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
-  imports: [PrismaModule, TodoModule, ImageModule],
+  imports: [CommonModule, PrismaModule, TodoModule, ImageModule],
   controllers: [AppController],
   providers: [AppService],
 })

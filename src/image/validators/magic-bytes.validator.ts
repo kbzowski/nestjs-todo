@@ -3,9 +3,9 @@ import { fileTypeFromBuffer } from 'file-type';
 
 export interface MagicBytesValidatorOptions {
   /**
-   * Dozwolone typy MIME (np. ['image/jpeg', 'image/png'])
+   * Dozwolone typy MIME
    */
-  allowedMimeTypes: string[];
+  allowedMimeTypes: readonly string[];
 }
 
 /**
