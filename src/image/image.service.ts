@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import sharp from 'sharp';
@@ -28,7 +29,7 @@ export class ImageService {
   /**
    * Wgrywa plik obrazu, przetwarza i zapisuje metadane do bazy danych
    */
-  async uploadImage(file: Express.Multer.File): Promise<Image> {
+  async uploadImage(file: Express.Multer.File, userId: number): Promise<Image> {
     // Generowanie unikalnej nazwy pliku
     const filename = this.generateFilename(file.originalname);
     const filepath = path.join(this.uploadDir, filename);
@@ -40,12 +41,13 @@ export class ImageService {
     // Zapis pliku na dysk
     await fs.writeFile(filepath, processedBuffer);
 
-    // Zapis metadanych do bazy danych
+    // Zapis metadanych do bazy danych z userId
     const image = await this.prisma.image.create({
       data: {
         filename,
         originalName: file.originalname,
         size: fileSize,
+        userId, // Dodaj właściciela obrazu
       },
     });
 
@@ -53,15 +55,20 @@ export class ImageService {
   }
 
   /**
-   * Usuwa obraz z bazy danych i dysku
+   * Usuwa obraz z bazy danych i dysku - tylko właściciel może usunąć
    */
-  async deleteImage(imageId: number): Promise<void> {
+  async deleteImage(imageId: number, userId: number): Promise<void> {
     const image = await this.prisma.image.findUnique({
       where: { id: imageId },
     });
 
     if (!image) {
       throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+
+    // Sprawdź czy użytkownik jest właścicielem obrazu
+    if (image.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this image');
     }
 
     // Usunięcie pliku z dysku

@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,24 +16,34 @@ export class TodoService {
 
   constructor(private prisma: PrismaService) {}
 
-  async create(createTodoDto: CreateTodoDto) {
+  /**
+   * Tworzy nowe todo dla danego użytkownika
+   */
+  async create(createTodoDto: CreateTodoDto, userId: number) {
     return this.prisma.todo.create({
-      data: createTodoDto,
+      data: {
+        ...createTodoDto,
+        userId, // Dodaj userId z zalogowanego użytkownika
+      },
       include: { image: true },
     });
   }
 
-  async findAll(queryDto: QueryTodoDto) {
+  /**
+   * Zwraca wszystkie todo należące do danego użytkownika
+   */
+  async findAll(queryDto: QueryTodoDto, userId: number) {
     this.logger.log(queryDto);
 
     const { search, page, limit, sortBy, sortOrder } = queryDto;
 
     const skip = (page - 1) * limit;
 
-    // Tworzymy zapytanie WHERE jesli search jest podany
-    const where: Prisma.TodoWhereInput = search
-      ? { title: { contains: search } }
-      : {};
+    // Tworzymy zapytanie WHERE - zawsze filtruj po userId!
+    const where: Prisma.TodoWhereInput = {
+      userId, // WAŻNE: Użytkownik widzi tylko swoje todo
+      ...(search && { title: { contains: search } }),
+    };
 
     // Zliczamy rekordy
     const totalPromise = this.prisma.todo.count({ where });
@@ -57,7 +72,10 @@ export class TodoService {
     };
   }
 
-  async findOne(id: number) {
+  /**
+   * Znajduje jedno todo - sprawdza czy należy do użytkownika
+   */
+  async findOne(id: number, userId: number) {
     const todo = await this.prisma.todo.findUnique({
       where: { id },
       include: { image: true },
@@ -67,11 +85,20 @@ export class TodoService {
       throw new NotFoundException(`Todo with ID ${id} not found`);
     }
 
+    // Sprawdź czy todo należy do użytkownika
+    if (todo.userId !== userId) {
+      throw new ForbiddenException('You do not have access to this todo');
+    }
+
     return todo;
   }
 
-  async update(id: number, updateTodoDto: UpdateTodoDto) {
-    await this.findOne(id);
+  /**
+   * Aktualizuje todo - tylko właściciel może aktualizować
+   */
+  async update(id: number, updateTodoDto: UpdateTodoDto, userId: number) {
+    // Sprawdź czy todo należy do użytkownika
+    await this.findOne(id, userId);
 
     return this.prisma.todo.update({
       where: { id },
@@ -80,8 +107,12 @@ export class TodoService {
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  /**
+   * Usuwa todo - tylko właściciel może usunąć
+   */
+  async remove(id: number, userId: number) {
+    // Sprawdź czy todo należy do użytkownika
+    await this.findOne(id, userId);
 
     await this.prisma.todo.delete({
       where: { id },

@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   HttpCode,
   StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import mime from 'mime-types';
@@ -16,26 +17,28 @@ import { ImageService } from './image.service';
 import { ImageUploadPipe } from './pipes';
 import { createReadStream } from 'fs';
 import type { Image } from '../generated/prisma-client/client';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('image')
 export class ImageController {
   constructor(private readonly imageService: ImageService) {}
 
   /**
-   * Wgrywa plik obrazu
-   * POST /image
+   * Wgrywa plik
    */
   @Post()
+  @UseGuards(JwtAuthGuard) // Tylko zalogowani mogą uploadować
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
     @UploadedFile(ImageUploadPipe) file: Express.Multer.File,
+    @CurrentUser() user: Express.RequestUser,
   ): Promise<Image> {
-    return this.imageService.uploadImage(file);
+    return this.imageService.uploadImage(file, user.userId);
   }
 
   /**
    * Pobiera plik obrazu
-   * GET /image/:id
    */
   @Get(':id')
   async getImage(@Param('id', ParseIntPipe) id: number) {
@@ -49,11 +52,14 @@ export class ImageController {
 
   /**
    * Usuwa obraz
-   * DELETE /image/:id
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard) // Tylko zalogowani mogą usuwać
   @HttpCode(204)
-  async deleteImage(@Param('id', ParseIntPipe) id: number) {
-    await this.imageService.deleteImage(id);
+  async deleteImage(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: Express.RequestUser,
+  ) {
+    await this.imageService.deleteImage(id, user.userId);
   }
 }
