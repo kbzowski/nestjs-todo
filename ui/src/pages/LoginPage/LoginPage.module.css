@@ -1,0 +1,39 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--spacing-xl);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0 0 var(--spacing-lg);
+  font-size: var(--font-size-xl);
+  text-align: center;
+  color: var(--color-text);
+}
+
+.link {
+  margin: var(--spacing-md) 0 0;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.link a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.link a:hover {
+  text-decoration: underline;
+}
