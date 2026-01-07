@@ -13,7 +13,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    video: 'on',
   },
 
   projects: [
@@ -30,6 +30,8 @@ export default defineConfig({
       url: 'http://localhost:3000/api',
       reuseExistingServer: false,
       timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
       env: {
         PORT: '3000',
         DATABASE_URL: 'file:./prisma/test.db',
